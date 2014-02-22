@@ -43,8 +43,8 @@
 
 (define (boolo b)
   (conde
-   [(== b #t)
-    (== b #f)]))
+   [(== b #t)]
+   [(== b #f)]))
 
 (define (expressiono exp env-in env-out val)
   (conde
@@ -81,9 +81,9 @@
       (expressiono e1 env-in env* v1)
       (expressiono e2 env* env-out v2)
       (conde
-       ;; TODO: this isn't right
        [(== #t v1) (== #t v2)]
-       [succeed]))]
+       [(== #f v1) (== #t v2)]
+       [(== #f v1) (== #f v2)]))]
    [(fresh (e1 e2 v1 v2 env*)
       (== `(IFF ,e1 ,e2) a)
       (expressiono e1 env-in env* v1)
@@ -104,7 +104,38 @@
         (eval-manyo assertions `() q)))
 
 (module+ test (require rackunit)
-  (check-equal? `(#t)
-    (run* (q) (oro #t #f q))
-    )
+  (check-equal? (run* (q) (oro #t #f q))
+                `(#t))
+  (check-equal? (run* (q) (ando #t #f q))
+                `(#f))
+  (check-equal? (run* (q) (ando #t #t q))
+                `(#t))
+  (check-equal? (run* (q) (noto #t q))
+                `(#f))
+  (check-equal? (run* (q) (expressiono `foo `() q #t))
+                `(((foo . #t))))
+  (check-equal? (run* (q) (expressiono #t `() `() q))
+                `(#t))
+  (check-equal? (run* (q) (fresh (a) (expressiono `foo `((foo . #f)) a q)))
+                `(#f))
+  (check-equal? (run* (q) (fresh (a) (expressiono `foo `((foo . #f)) a q)))
+                `(#f))
+  (check-equal? (run* (q) (fresh (a) (expressiono `(AND foo #t) `((foo . #f)) a q)))
+                `(#f))
+  (check-equal? (run* (q) (fresh (a) (expressiono `(AND foo #t) `((foo . ,q)) a #f)))
+                `(#f))
+  (check-equal? (run* (q) (expressiono `(AND foo #t) `() q #f))
+                `(((foo . #f))))
+  (check-equal? (run* (q) (expressiono `(AND foo (NOT bar)) `((bar . #t)) q #t))
+                `())
+  (check-equal? (run* (q) (assertiono `(IF #t #t) `() `()))
+                `(_.0))
+  ;;TODO, why can't I run* this? It just runs forever. BOO
+  (check-equal? (run 1 (q) (assertiono `(IF #t ,q) `() `()))
+                `(#t))
+  (check-equal? (run 2 (q) (assertiono `(IF #f ,q) `() `()))
+                `(#t #f))
+  (check-equal? (run 1 (q) (eval-manyo `((IF a b) (IF b c) (IFF a #t)) `() q))
+                `(((c . #t) (b . #t) (a . #t))))
+  
   )
