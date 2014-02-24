@@ -24,7 +24,6 @@
    [(== a #t) (== b #f) (== r #f)]
    [(== a #f) (== b #f) (== r #f)]))
 
-;; unifies r with (or a b)
 (define (oro a b r)
   (conde
    [(== a #t) (== b #t) (== r #t)]
@@ -32,7 +31,6 @@
    [(== a #t) (== b #f) (== r #t)]
    [(== a #f) (== b #f) (== r #f)]))
 
-;; unifies v with (not x)
 (define (noto x v)
   (conde
    [(== x #t) (== v #f)]
@@ -127,7 +125,6 @@
                 `())
   (check-equal? (run* (q) (assertiono `(IF #t #t) `() `()))
                 `(_.0))
-  ;;TODO, why can't I run* this? It just runs forever. BOO
   (check-equal? (run 1 (q) (assertiono `(IF #t ,q) `() `()))
                 `(#t))
   (check-equal? (run 2 (q) (assertiono `(IF #f ,q) `() `()))
@@ -136,4 +133,3 @@
                 `(((c . #t) (b . #t) (a . #t))))
   
   )
-
