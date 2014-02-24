@@ -1,9 +1,6 @@
 #lang racket
 (require "miniKanren/mk.rkt")
 
-;;expression
-;;assertion
-
 (define (new-varo key env)
   (conde
    [(fresh (k v rest)
@@ -48,6 +45,9 @@
 
 (define (expressiono exp env-in env-out val)
   (conde
+   [(boolo exp)
+    (== env-in env-out)
+    (== exp val)]
    [(symbolo exp)
     (new-varo exp env-in)
     (fresh (v)
@@ -57,22 +57,19 @@
     (get-varo exp env-in val)
     (== env-in env-out)]
    [(fresh (e1 e2 v1 v2 env*)
-        (== `(AND ,e1 ,e2) exp)
-        (expressiono e1 env-in env* v1)
-        (expressiono e2 env* env-out v2)
-        (ando v1 v2 val))]
+      (== `(AND ,e1 ,e2) exp)
+      (expressiono e1 env-in env* v1)
+      (expressiono e2 env* env-out v2)
+      (ando v1 v2 val))]
    [(fresh (e1 e2 v1 v2 env*)
-        (== `(OR ,e1 ,e2) exp)
-        (expressiono e1 env-in env* v1)
-        (expressiono e2 env* env-out v2)
-        (oro v1 v2 val))]
+      (== `(OR ,e1 ,e2) exp)
+      (expressiono e1 env-in env* v1)
+      (expressiono e2 env* env-out v2)
+      (oro v1 v2 val))]
    [(fresh (e v)
-        (== `(NOT ,e) exp)
-        (expressiono e env-in env-out v)
-        (noto v val))]
-   [(boolo exp)
-    (== env-in env-out)
-    (== exp val)]))
+      (== `(NOT ,e) exp)
+      (expressiono e env-in env-out v)
+      (noto v val))]))
 
 (define (assertiono a env-in env-out)
   (conde
@@ -93,15 +90,15 @@
 (define (eval-manyo as env-in env-out)
   (conde
    [(fresh (f r env* v)
-           (== (cons f r) as)
-           (assertiono f env-in env*)
-           (eval-manyo r env* env-out))]
+      (== (cons f r) as)
+      (assertiono f env-in env*)
+      (eval-manyo r env* env-out))]
    [(== `() as)
     (== env-in env-out)]))
 
 (define (evaluate-assertions . assertions)
   (run* (q)
-        (eval-manyo assertions `() q)))
+    (eval-manyo assertions `() q)))
 
 (module+ test (require rackunit)
   (check-equal? (run* (q) (oro #t #f q))
@@ -139,3 +136,4 @@
                 `(((c . #t) (b . #t) (a . #t))))
   
   )
+
